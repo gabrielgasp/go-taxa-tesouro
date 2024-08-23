@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -38,7 +39,7 @@ func (a api) Run(ctx context.Context) {
 	defer a.wg.Done()
 
 	r := chi.NewRouter()
-	r.Use(middleware.RealIP)
+	r.Use(a.realIpMiddleware)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(httprate.LimitByIP(viper.GetInt("RATE_LIMIT_PER_MINUTE"), time.Minute))
@@ -124,4 +125,32 @@ func (a api) getBondByName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (a api) realIpMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var ip string
+
+		if cfip := r.Header.Get("CF-Connecting-IP"); cfip != "" {
+			ip = cfip
+		} else if tcip := r.Header.Get("True-Client-IP"); tcip != "" {
+			ip = tcip
+		} else if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
+			ip = xrip
+		} else if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			i := strings.Index(xff, ",")
+			if i == -1 {
+				i = len(xff)
+			}
+			ip = xff[:i]
+		}
+
+		if ip == "" || net.ParseIP(ip) == nil {
+			return
+		}
+
+		r.RemoteAddr = ip
+
+		next.ServeHTTP(w, r)
+	})
 }
