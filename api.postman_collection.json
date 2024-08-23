@@ -1,0 +1,71 @@
+{
+	"info": {
+		"_postman_id": "151626f2-fd8d-403d-9832-25a1bf58aa7f",
+		"name": "TESOURO SCRAPPER",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29693662"
+	},
+	"item": [
+		{
+			"name": "HEALTH",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:4722/health",
+					"host": [
+						"localhost"
+					],
+					"port": "4722",
+					"path": [
+						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "LIST BONDS",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:4722/bonds",
+					"host": [
+						"localhost"
+					],
+					"port": "4722",
+					"path": [
+						"bonds"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET BOND BY NAME",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:4722/bonds/:bondName",
+					"host": [
+						"localhost"
+					],
+					"port": "4722",
+					"path": [
+						"bonds",
+						":bondName"
+					],
+					"variable": [
+						{
+							"key": "bondName",
+							"value": "tesouro_ipca+_2035"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
