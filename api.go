@@ -145,11 +145,9 @@ func (a api) realIpMiddleware(next http.Handler) http.Handler {
 			ip = xff[:i]
 		}
 
-		if ip == "" || net.ParseIP(ip) == nil {
-			return
+		if ip != "" && net.ParseIP(ip) != nil {
+			r.RemoteAddr = ip
 		}
-
-		r.RemoteAddr = ip
 
 		next.ServeHTTP(w, r)
 	})
