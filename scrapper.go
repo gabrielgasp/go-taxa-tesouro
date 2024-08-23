@@ -33,6 +33,8 @@ func NewScrapper(rxMutex *sync.RWMutex, wg *sync.WaitGroup) Scrapper {
 }
 
 func (s scrapper) Run(ctx context.Context) {
+	defer s.wg.Done()
+
 	loc, err := time.LoadLocation("America/Sao_Paulo")
 	if err != nil {
 		log.Println("Error loading location")
@@ -55,7 +57,6 @@ func (s scrapper) Run(ctx context.Context) {
 			}
 		case <-ctx.Done():
 			log.Println("Scrapper shutdown")
-			s.wg.Done()
 			return
 		}
 	}

@@ -35,6 +35,7 @@ func NewApi(rxMutex *sync.RWMutex, wg *sync.WaitGroup) Api {
 
 func (a api) Run(ctx context.Context) {
 	defer a.wg.Done()
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.RealIP)
