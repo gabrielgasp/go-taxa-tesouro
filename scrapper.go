@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"log"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
@@ -37,12 +37,12 @@ func (s scrapper) Run(ctx context.Context) {
 
 	loc, err := time.LoadLocation("America/Sao_Paulo")
 	if err != nil {
-		log.Println("Error loading location")
+		slog.Error("Error loading location")
 		return
 	}
 
 	s.scrap()
-	log.Println("Initial scrapping finished")
+	slog.Info("Initial scrapping finished")
 
 	ticker := time.NewTicker(viper.GetDuration("INTERVAL_MINUTES") * time.Minute)
 	defer ticker.Stop()
@@ -51,12 +51,12 @@ func (s scrapper) Run(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			if s.shouldScrap(loc) {
-				log.Println("Scrapping started")
+				slog.Info("Scrapping started")
 				s.scrap()
-				log.Println("Scrapping finished")
+				slog.Info("Scrapping finished")
 			}
 		case <-ctx.Done():
-			log.Println("Scrapper shutdown")
+			slog.Info("Scrapper shutdown")
 			return
 		}
 	}
@@ -78,21 +78,21 @@ func (s scrapper) scrap() {
 	fakeChrome := req.ImpersonateChrome()
 	res := fakeChrome.Get(viper.GetString("URL_TESOURO")).Do()
 
-	if res.StatusCode != 200 {
-		log.Println("Failed to fetch data; Status code:", res.StatusCode)
+	if res.StatusCode == 200 {
+		slog.Error("Failed to fetch data", "status code", res.StatusCode)
 		return
 	}
 
 	defer res.Body.Close()
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Println("Failed to read response body:", err)
+		slog.Error("Failed to read response body", "error", err.Error())
 		return
 	}
 
 	var tesouroResponse model.TesouroResponse
 	if err := json.Unmarshal(data, &tesouroResponse); err != nil {
-		log.Println("Failed to unmarshal response:", err)
+		slog.Error("Failed to unmarshal response", "error", err.Error())
 		return
 	}
 

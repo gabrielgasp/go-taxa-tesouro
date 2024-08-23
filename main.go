@@ -2,7 +2,8 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
+	"os"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -10,7 +11,8 @@ import (
 
 func main() {
 	if err := bootstrapConfig(); err != nil {
-		log.Fatalf("Failed to load config file, should 'ENV' be set to production?")
+		slog.Error("Failed to load config file, should 'ENV' be set to production?")
+		os.Exit(1)
 	}
 
 	rwMutex := &sync.RWMutex{}
@@ -28,5 +30,5 @@ func main() {
 
 	wg.Wait()
 
-	log.Println("App shutdown complete")
+	slog.Info("App shutdown complete")
 }
