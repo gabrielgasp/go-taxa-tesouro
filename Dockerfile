@@ -6,6 +6,7 @@ RUN CGO_ENABLED=1 go build -tags musl -o ./bin/app .
 
 FROM alpine:3.18 AS release
 RUN apk add --no-cache tzdata
+USER nobody
 EXPOSE 4722
 COPY --from=builder /application/bin/app /application/bin/app
 CMD /application/bin/app
