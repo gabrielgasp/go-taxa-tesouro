@@ -102,7 +102,7 @@ func (a api) getBondByName(w http.ResponseWriter, r *http.Request) {
 	defer a.rwMutex.RUnlock()
 
 	bondName := chi.URLParam(r, "bondName")
-	bondName = strings.ReplaceAll(bondName, "_", " ")
+	bondName = strings.ReplaceAll(bondName, "-", " ")
 
 	cachedBond, found := scrapperCache.BondsMap[strings.ToLower(bondName)]
 	if !found {
