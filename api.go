@@ -38,8 +38,8 @@ func (a api) Run(ctx context.Context) {
 	defer a.wg.Done()
 
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
 	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(httprate.LimitByIP(viper.GetInt("RATE_LIMIT_PER_MINUTE"), time.Minute))
 
