@@ -68,7 +68,7 @@ func (s scrapper) shouldScrap(loc *time.Location) bool {
 	return now.Weekday() >= time.Weekday(viper.GetInt("START_DAY")) &&
 		now.Weekday() <= time.Weekday(viper.GetInt("END_DAY")) &&
 		now.Hour() >= viper.GetInt("START_HOUR") &&
-		now.Hour() <= viper.GetInt("END_HOUR")
+		now.Hour() < viper.GetInt("END_HOUR")
 }
 
 func (s scrapper) scrap() {
