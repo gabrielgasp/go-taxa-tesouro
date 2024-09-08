@@ -24,12 +24,14 @@ type Api interface {
 }
 
 type api struct {
+	logger  *slog.Logger
 	rwMutex *sync.RWMutex
 	wg      *sync.WaitGroup
 }
 
-func NewApi(rxMutex *sync.RWMutex, wg *sync.WaitGroup) Api {
+func NewApi(logger *slog.Logger, rxMutex *sync.RWMutex, wg *sync.WaitGroup) Api {
 	return api{
+		logger:  logger,
 		rwMutex: rxMutex,
 		wg:      wg,
 	}
@@ -55,12 +57,12 @@ func (a api) Run(ctx context.Context) {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("Failed to start API", "error", err.Error())
+			a.logger.Error("Failed to start API", "error", err.Error())
 			os.Exit(1)
 		}
 	}()
 
-	slog.Info("Server is running on port " + viper.GetString("PORT"))
+	a.logger.Info("Server is running on port " + viper.GetString("PORT"))
 
 	<-ctx.Done()
 	a.shutdown(server)
@@ -71,11 +73,11 @@ func (a api) shutdown(server *http.Server) {
 	defer ctxCancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		slog.Error("Failed to shutdown API", "error", err.Error())
+		a.logger.Error("Failed to shutdown API", "error", err.Error())
 		return
 	}
 
-	slog.Info("API stopped")
+	a.logger.Info("API stopped")
 }
 
 func (a api) health(w http.ResponseWriter, _ *http.Request) {
@@ -92,7 +94,7 @@ func (a api) listAllBonds(w http.ResponseWriter, _ *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		slog.Error("Failed to encode response", "error", err.Error())
+		a.logger.Error("Failed to encode response", "error", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -119,7 +121,7 @@ func (a api) getBondByName(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		slog.Error("Failed to encode response", "error", err.Error())
+		a.logger.Error("Failed to encode response", "error", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

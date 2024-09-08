@@ -21,12 +21,14 @@ type Scrapper interface {
 }
 
 type scrapper struct {
+	logger  *slog.Logger
 	rwMutex *sync.RWMutex
 	wg      *sync.WaitGroup
 }
 
-func NewScrapper(rxMutex *sync.RWMutex, wg *sync.WaitGroup) Scrapper {
+func NewScrapper(logger *slog.Logger, rxMutex *sync.RWMutex, wg *sync.WaitGroup) Scrapper {
 	return scrapper{
+		logger:  logger,
 		rwMutex: rxMutex,
 		wg:      wg,
 	}
@@ -37,12 +39,12 @@ func (s scrapper) Run(ctx context.Context) {
 
 	loc, err := time.LoadLocation("America/Sao_Paulo")
 	if err != nil {
-		slog.Error("Error loading location")
+		s.logger.Error("Error loading location")
 		return
 	}
 
 	s.scrap()
-	slog.Info("Initial scrapping finished")
+	s.logger.Info("Initial scrapping finished")
 
 	ticker := time.NewTicker(viper.GetDuration("INTERVAL_MINUTES") * time.Minute)
 	defer ticker.Stop()
@@ -51,12 +53,12 @@ func (s scrapper) Run(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			if s.shouldScrap(loc) {
-				slog.Info("Scrapping started")
+				s.logger.Debug("Scrapping started")
 				s.scrap()
-				slog.Info("Scrapping finished")
+				s.logger.Debug("Scrapping finished")
 			}
 		case <-ctx.Done():
-			slog.Info("Scrapper shutdown")
+			s.logger.Info("Scrapper stopped")
 			return
 		}
 	}
@@ -79,20 +81,20 @@ func (s scrapper) scrap() {
 	res := fakeChrome.Get(viper.GetString("URL_TESOURO")).Do()
 
 	if res.StatusCode != 200 {
-		slog.Error("Failed to fetch data", "status code", res.StatusCode)
+		s.logger.Error("Failed to fetch data", "status code", res.StatusCode)
 		return
 	}
 
 	defer res.Body.Close()
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
-		slog.Error("Failed to read response body", "error", err.Error())
+		s.logger.Error("Failed to read response body", "error", err.Error())
 		return
 	}
 
 	var tesouroResponse model.TesouroResponse
 	if err := json.Unmarshal(data, &tesouroResponse); err != nil {
-		slog.Error("Failed to unmarshal response", "error", err.Error())
+		s.logger.Error("Failed to unmarshal response", "error", err.Error())
 		return
 	}
 
