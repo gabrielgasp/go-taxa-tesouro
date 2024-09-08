@@ -36,7 +36,7 @@ func main() {
 
 	wg.Wait()
 
-	slog.Info("App shutdown complete")
+	logger.Info("App shutdown complete")
 }
 
 func bootstrapConfig() error {
