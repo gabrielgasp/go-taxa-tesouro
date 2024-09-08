@@ -43,7 +43,7 @@ func (s scrapper) Run(ctx context.Context) {
 		return
 	}
 
-	s.scrap()
+	s.scrape()
 	s.logger.Info("Initial scrapping finished")
 
 	ticker := time.NewTicker(viper.GetDuration("INTERVAL_MINUTES") * time.Minute)
@@ -52,9 +52,9 @@ func (s scrapper) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			if s.shouldScrap(loc) {
+			if s.shouldScrape(loc) {
 				s.logger.Debug("Scrapping started")
-				s.scrap()
+				s.scrape()
 				s.logger.Debug("Scrapping finished")
 			}
 		case <-ctx.Done():
@@ -64,7 +64,7 @@ func (s scrapper) Run(ctx context.Context) {
 	}
 }
 
-func (s scrapper) shouldScrap(loc *time.Location) bool {
+func (s scrapper) shouldScrape(loc *time.Location) bool {
 	now := time.Now().In(loc)
 
 	return now.Weekday() >= time.Weekday(viper.GetInt("START_DAY")) &&
@@ -73,7 +73,7 @@ func (s scrapper) shouldScrap(loc *time.Location) bool {
 		now.Hour() < viper.GetInt("END_HOUR")
 }
 
-func (s scrapper) scrap() {
+func (s scrapper) scrape() {
 	s.rwMutex.Lock()
 	defer s.rwMutex.Unlock()
 
