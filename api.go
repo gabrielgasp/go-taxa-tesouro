@@ -45,6 +45,7 @@ func (a api) Run(ctx context.Context) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(httprate.LimitByIP(viper.GetInt("RATE_LIMIT_PER_MINUTE"), time.Minute))
+	r.Use(middleware.Compress(5))
 
 	r.Get("/health", a.health)
 	r.Get("/bonds", a.listAllBonds)
