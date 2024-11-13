@@ -33,8 +33,12 @@ func main() {
 	scrapper := NewScrapper(logger, rwMutex, wg)
 	api := NewApi(logger, rwMutex, wg)
 
-	wg.Add(2)
-	go scrapper.Run(ctx)
+	if viper.GetBool("SCRAPPER_ENABLED") {
+		wg.Add(1)
+		go scrapper.Run(ctx)
+	}
+
+	wg.Add(1)
 	go api.Run(ctx)
 
 	wg.Wait()
