@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
-	"strings"
 	"sync"
 	"time"
 
@@ -13,8 +12,6 @@ import (
 	"github.com/imroc/req/v3"
 	"github.com/spf13/viper"
 )
-
-var scrapperCache model.ScrapperCache
 
 type Scrapper interface {
 	Run(context.Context)
@@ -98,22 +95,5 @@ func (s scrapper) scrape() {
 		return
 	}
 
-	scrapperCache.BondsList = make([]model.ScrapperBond, len(tesouroResponse.Response.TreasureBondsList))
-	scrapperCache.BondsMap = make(map[string]model.ScrapperBond)
-
-	for i, tb := range tesouroResponse.Response.TreasureBondsList {
-		scrapperBond := model.ScrapperBond{
-			Name:                    tb.TreasureBond.Nm,
-			AnnualInvestmentRate:    tb.TreasureBond.AnulInvstmtRate,
-			UnitaryInvestmentValue:  tb.TreasureBond.UntrInvstmtVal,
-			MinimumInvestmentAmount: tb.TreasureBond.MinInvstmtAmt,
-			AnnualRedemptionRate:    tb.TreasureBond.AnulRedRate,
-			UnitaryRedemptionValue:  tb.TreasureBond.UntrRedVal,
-			MinimumRedemptionValue:  tb.TreasureBond.MinRedVal,
-		}
-
-		scrapperCache.BondsList[i] = scrapperBond
-		scrapperCache.BondsMap[strings.ToLower(scrapperBond.Name)] = scrapperBond
-	}
-	scrapperCache.UpdatedAt = tesouroResponse.Response.BusinessStatus.DtTm
+	scrapperCache.Save(tesouroResponse.Data)
 }

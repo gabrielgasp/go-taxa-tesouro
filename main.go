@@ -10,8 +10,11 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/gabrielgasp/go-taxa-tesouro/model"
 	"github.com/spf13/viper"
 )
+
+var scrapperCache model.ScrapperCache
 
 func main() {
 	if err := bootstrapConfig(); err != nil {

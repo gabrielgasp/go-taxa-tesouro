@@ -1,12 +1,16 @@
 package model
 
 type TesouroResponse struct {
-	Response struct {
-		TreasureBondsList []struct {
-			TreasureBond TreasureBond `json:"TrsrBd"`
-		} `json:"TrsrBdTradgList"`
-		BusinessStatus BusinessStatus `json:"BizSts"`
-	} `json:"response"`
+	Data TesouroData `json:"response"`
+}
+
+type TesouroData struct {
+	TreasureBondsList []TreasureBondsList `json:"TrsrBdTradgList"`
+	BusinessStatus    BusinessStatus      `json:"BizSts"`
+}
+
+type TreasureBondsList struct {
+	TreasureBond TreasureBond `json:"TrsrBd"`
 }
 
 type TreasureBond struct {

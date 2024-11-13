@@ -48,6 +48,7 @@ func (a api) Run(ctx context.Context) {
 	r.Use(middleware.Compress(5))
 
 	r.Get("/health", a.health)
+	r.Post("/bonds", a.authMiddleware(a.saveBonds))
 	r.Get("/bonds", a.listAllBonds)
 	r.Get("/bonds/{bondName}", a.getBondByName)
 
@@ -83,6 +84,22 @@ func (a api) shutdown(server *http.Server) {
 
 func (a api) health(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
+}
+
+func (a api) saveBonds(w http.ResponseWriter, r *http.Request) {
+	var tesouroResponse model.TesouroResponse
+	if err := json.NewDecoder(r.Body).Decode(&tesouroResponse); err != nil {
+		a.logger.Error("Failed to decode request body", "error", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	a.rwMutex.Lock()
+	defer a.rwMutex.Unlock()
+
+	scrapperCache.Save(tesouroResponse.Data)
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (a api) listAllBonds(w http.ResponseWriter, _ *http.Request) {
@@ -154,4 +171,16 @@ func (a api) realIpMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (a api) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authHeader := strings.Split(r.Header.Get("Authorization"), "Bearer ")
+		if len(authHeader) != 2 || authHeader[1] != viper.GetString("API_KEY") {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		next(w, r)
+	}
 }
