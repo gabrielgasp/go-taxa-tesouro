@@ -77,6 +77,11 @@ func (s scrapper) scrape() {
 	fakeChrome := req.ImpersonateChrome()
 	res := fakeChrome.Get(viper.GetString("URL_TESOURO")).Do()
 
+	if res.Response == nil {
+		s.logger.Error("Failed to fetch data", "error", res.Err)
+		return
+	}
+
 	if res.StatusCode != 200 {
 		s.logger.Error("Failed to fetch data", "status code", res.StatusCode)
 		return
