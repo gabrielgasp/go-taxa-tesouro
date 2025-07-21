@@ -13,25 +13,25 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Scrapper interface {
+type Scraper interface {
 	Run(context.Context)
 }
 
-type scrapper struct {
+type scraper struct {
 	logger  *slog.Logger
 	rwMutex *sync.RWMutex
 	wg      *sync.WaitGroup
 }
 
-func NewScrapper(logger *slog.Logger, rxMutex *sync.RWMutex, wg *sync.WaitGroup) Scrapper {
-	return scrapper{
+func NewScraper(logger *slog.Logger, rxMutex *sync.RWMutex, wg *sync.WaitGroup) Scraper {
+	return scraper{
 		logger:  logger,
 		rwMutex: rxMutex,
 		wg:      wg,
 	}
 }
 
-func (s scrapper) Run(ctx context.Context) {
+func (s scraper) Run(ctx context.Context) {
 	defer s.wg.Done()
 
 	loc, err := time.LoadLocation("America/Sao_Paulo")
@@ -41,7 +41,7 @@ func (s scrapper) Run(ctx context.Context) {
 	}
 
 	s.scrape()
-	s.logger.Info("Initial scrapping finished")
+	s.logger.Info("Initial scraping finished")
 
 	ticker := time.NewTicker(viper.GetDuration("INTERVAL_MINUTES") * time.Minute)
 	defer ticker.Stop()
@@ -50,18 +50,18 @@ func (s scrapper) Run(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			if s.shouldScrape(loc) {
-				s.logger.Debug("Scrapping started")
+				s.logger.Debug("Scraping started")
 				s.scrape()
-				s.logger.Debug("Scrapping finished")
+				s.logger.Debug("Scraping finished")
 			}
 		case <-ctx.Done():
-			s.logger.Info("Scrapper stopped")
+			s.logger.Info("Scraper stopped")
 			return
 		}
 	}
 }
 
-func (s scrapper) shouldScrape(loc *time.Location) bool {
+func (s scraper) shouldScrape(loc *time.Location) bool {
 	now := time.Now().In(loc)
 
 	return now.Weekday() >= time.Weekday(viper.GetInt("START_DAY")) &&
@@ -70,7 +70,7 @@ func (s scrapper) shouldScrape(loc *time.Location) bool {
 		now.Hour() < viper.GetInt("END_HOUR")
 }
 
-func (s scrapper) scrape() {
+func (s scraper) scrape() {
 	s.rwMutex.Lock()
 	defer s.rwMutex.Unlock()
 
@@ -100,5 +100,5 @@ func (s scrapper) scrape() {
 		return
 	}
 
-	scrapperCache.Save(tesouroResponse.Data)
+	scraperCache.Save(tesouroResponse.Data)
 }

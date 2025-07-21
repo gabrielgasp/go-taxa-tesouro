@@ -2,7 +2,7 @@ package model
 
 import "strings"
 
-type ScrapperBond struct {
+type ScraperBond struct {
 	Name                    string  `json:"name"`
 	AnnualInvestmentRate    float64 `json:"annual_investment_rate"`
 	UnitaryInvestmentValue  float64 `json:"unitary_investment_value"`
@@ -12,18 +12,18 @@ type ScrapperBond struct {
 	MinimumRedemptionValue  float64 `json:"minimum_redemption_value"`
 }
 
-type ScrapperCache struct {
-	BondsList []ScrapperBond
-	BondsMap  map[string]ScrapperBond
+type ScraperCache struct {
+	BondsList []ScraperBond
+	BondsMap  map[string]ScraperBond
 	UpdatedAt string
 }
 
-func (sc *ScrapperCache) Save(data TesouroData) {
-	sc.BondsList = make([]ScrapperBond, len(data.TreasureBondsList))
-	sc.BondsMap = make(map[string]ScrapperBond)
+func (sc *ScraperCache) Save(data TesouroData) {
+	sc.BondsList = make([]ScraperBond, len(data.TreasureBondsList))
+	sc.BondsMap = make(map[string]ScraperBond)
 
 	for i, tb := range data.TreasureBondsList {
-		scrapperBond := ScrapperBond{
+		scraperBond := ScraperBond{
 			Name:                    tb.TreasureBond.Nm,
 			AnnualInvestmentRate:    tb.TreasureBond.AnulInvstmtRate,
 			UnitaryInvestmentValue:  tb.TreasureBond.UntrInvstmtVal,
@@ -33,8 +33,8 @@ func (sc *ScrapperCache) Save(data TesouroData) {
 			MinimumRedemptionValue:  tb.TreasureBond.MinRedVal,
 		}
 
-		sc.BondsList[i] = scrapperBond
-		sc.BondsMap[strings.ToLower(scrapperBond.Name)] = scrapperBond
+		sc.BondsList[i] = scraperBond
+		sc.BondsMap[strings.ToLower(scraperBond.Name)] = scraperBond
 	}
 	sc.UpdatedAt = data.BusinessStatus.DtTm
 }

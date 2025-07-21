@@ -97,7 +97,7 @@ func (a api) saveBonds(w http.ResponseWriter, r *http.Request) {
 	a.rwMutex.Lock()
 	defer a.rwMutex.Unlock()
 
-	scrapperCache.Save(tesouroResponse.Data)
+	scraperCache.Save(tesouroResponse.Data)
 
 	w.WriteHeader(http.StatusCreated)
 }
@@ -107,8 +107,8 @@ func (a api) listAllBonds(w http.ResponseWriter, _ *http.Request) {
 	defer a.rwMutex.RUnlock()
 
 	var response model.ListAllBondsResponse
-	response.Bonds = scrapperCache.BondsList
-	response.UpdatedAt = scrapperCache.UpdatedAt
+	response.Bonds = scraperCache.BondsList
+	response.UpdatedAt = scraperCache.UpdatedAt
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -127,7 +127,7 @@ func (a api) getBondByName(w http.ResponseWriter, r *http.Request) {
 	bondName := chi.URLParam(r, "bondName")
 	bondName = strings.ReplaceAll(bondName, "-", " ")
 
-	cachedBond, found := scrapperCache.BondsMap[strings.ToLower(bondName)]
+	cachedBond, found := scraperCache.BondsMap[strings.ToLower(bondName)]
 	if !found {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -135,7 +135,7 @@ func (a api) getBondByName(w http.ResponseWriter, r *http.Request) {
 
 	var response model.GetBondByNameResponse
 	response.Bond = cachedBond
-	response.UpdatedAt = scrapperCache.UpdatedAt
+	response.UpdatedAt = scraperCache.UpdatedAt
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {

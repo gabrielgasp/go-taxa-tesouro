@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var scrapperCache model.ScrapperCache
+var scraperCache model.ScraperCache
 
 func main() {
 	if err := bootstrapConfig(); err != nil {
@@ -30,12 +30,12 @@ func main() {
 	ctx, cancelCtx := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancelCtx()
 
-	scrapper := NewScrapper(logger, rwMutex, wg)
+	scraper := NewScraper(logger, rwMutex, wg)
 	api := NewApi(logger, rwMutex, wg)
 
-	if viper.GetBool("SCRAPPER_ENABLED") {
+	if viper.GetBool("SCRAPER_ENABLED") {
 		wg.Add(1)
-		go scrapper.Run(ctx)
+		go scraper.Run(ctx)
 	}
 
 	wg.Add(1)
