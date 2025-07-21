@@ -1,12 +1,14 @@
 FROM golang:1.23-alpine AS builder
-RUN apk add --no-cache git pkgconf gcc libc-dev
-WORKDIR /application
-COPY . /application
-RUN CGO_ENABLED=1 go build -tags musl -o ./bin/app .
+RUN apk add --no-cache git
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN go build -o main -ldflags="-s -w" .
 
-FROM alpine:3.18 AS release
-RUN apk add --no-cache tzdata
+FROM alpine:3.22 AS release
+RUN apk add --no-cache ca-certificates tzdata
 USER nobody
 EXPOSE 4722
-COPY --from=builder /application/bin/app /application/bin/app
-CMD /application/bin/app
+COPY --from=builder /app/main /usr/local/bin/main
+ENTRYPOINT ["main"]
