@@ -19,16 +19,14 @@ type Scraper interface {
 }
 
 type scraper struct {
-	logger  *slog.Logger
-	rwMutex *sync.RWMutex
-	wg      *sync.WaitGroup
+	logger *slog.Logger
+	wg     *sync.WaitGroup
 }
 
-func NewScraper(logger *slog.Logger, rxMutex *sync.RWMutex, wg *sync.WaitGroup) Scraper {
+func NewScraper(logger *slog.Logger, wg *sync.WaitGroup) Scraper {
 	return scraper{
-		logger:  logger,
-		rwMutex: rxMutex,
-		wg:      wg,
+		logger: logger,
+		wg:     wg,
 	}
 }
 
@@ -72,9 +70,6 @@ func (s scraper) shouldScrape(loc *time.Location) bool {
 }
 
 func (s scraper) scrape() {
-	s.rwMutex.Lock()
-	defer s.rwMutex.Unlock()
-
 	investData, err := s.fetchData(viper.GetString("INVEST_CSV_URL"))
 	if err != nil {
 		s.logger.Error("Failed to fetch invest data", "error", err.Error())

@@ -24,16 +24,14 @@ type Api interface {
 }
 
 type api struct {
-	logger  *slog.Logger
-	rwMutex *sync.RWMutex
-	wg      *sync.WaitGroup
+	logger *slog.Logger
+	wg     *sync.WaitGroup
 }
 
-func NewApi(logger *slog.Logger, rxMutex *sync.RWMutex, wg *sync.WaitGroup) Api {
+func NewApi(logger *slog.Logger, wg *sync.WaitGroup) Api {
 	return api{
-		logger:  logger,
-		rwMutex: rxMutex,
-		wg:      wg,
+		logger: logger,
+		wg:     wg,
 	}
 }
 
@@ -94,9 +92,6 @@ func (a api) saveBonds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.rwMutex.Lock()
-	defer a.rwMutex.Unlock()
-
 	var investDataParsed []model.Invest
 	if err := model.ParseCSV(body.InvestData, &investDataParsed); err != nil {
 		a.logger.Error("Failed to parse invest data", "error", err.Error())
@@ -117,8 +112,8 @@ func (a api) saveBonds(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a api) listAllBonds(w http.ResponseWriter, _ *http.Request) {
-	a.rwMutex.RLock()
-	defer a.rwMutex.RUnlock()
+	scraperCache.RLock()
+	defer scraperCache.RUnlock()
 
 	var response model.ListAllBondsResponse
 	response.Bonds = scraperCache.BondsList
@@ -135,8 +130,8 @@ func (a api) listAllBonds(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (a api) getBondByName(w http.ResponseWriter, r *http.Request) {
-	a.rwMutex.RLock()
-	defer a.rwMutex.RUnlock()
+	scraperCache.RLock()
+	defer scraperCache.RUnlock()
 
 	bondName := chi.URLParam(r, "bondName")
 	bondName = strings.ReplaceAll(bondName, "-", " ")

@@ -3,6 +3,7 @@ package model
 import (
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/spf13/viper"
@@ -22,6 +23,7 @@ type ScraperCache struct {
 	BondsMap  map[string]ScraperBond
 	BondsList []ScraperBond
 	UpdatedAt string
+	sync.RWMutex
 }
 
 func (sc *ScraperCache) Save(investData []Invest, redeemData []Redeem) {
@@ -52,6 +54,9 @@ func (sc *ScraperCache) Save(investData []Invest, redeemData []Redeem) {
 	for _, bond := range bondsMap {
 		bondsList = append(bondsList, bond)
 	}
+
+	sc.Lock()
+	defer sc.Unlock()
 
 	sc.BondsMap = bondsMap
 	sc.BondsList = sc.sortByPrefix(bondsList)
