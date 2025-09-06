@@ -32,12 +32,14 @@ type Invest struct {
 	AnnualInvestmentRate    string `csv:"Rendimento anual do título"`
 	UnitaryInvestmentValue  BRL    `csv:"Preço unitário de investimento"`
 	MinimumInvestmentAmount BRL    `csv:"Investimento mínimo"`
+	Maturity                string `csv:"Vencimento do Título"`
 }
 
 type Redeem struct {
 	Name                   string `csv:"Título"`
 	AnnualRedemptionRate   string `csv:"Rendimento anual do título"`
 	UnitaryRedemptionValue BRL    `csv:"Preço unitário de resgate"`
+	Maturity               string `csv:"Vencimento do Título"`
 }
 
 func ParseCSV[T any](data []byte, out *[]T) error {
