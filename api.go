@@ -87,8 +87,8 @@ func (a api) health(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (a api) saveBonds(w http.ResponseWriter, r *http.Request) {
-	var tesouroResponse model.TesouroResponse
-	if err := json.NewDecoder(r.Body).Decode(&tesouroResponse); err != nil {
+	var body model.SaveBondsRequest
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		a.logger.Error("Failed to decode request body", "error", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -97,7 +97,21 @@ func (a api) saveBonds(w http.ResponseWriter, r *http.Request) {
 	a.rwMutex.Lock()
 	defer a.rwMutex.Unlock()
 
-	scraperCache.Save(tesouroResponse.Data)
+	var investDataParsed []model.Invest
+	if err := model.ParseCSV(body.InvestData, &investDataParsed); err != nil {
+		a.logger.Error("Failed to parse invest data", "error", err.Error())
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		return
+	}
+
+	var redeemDataParsed []model.Redeem
+	if err := model.ParseCSV(body.RedeemData, &redeemDataParsed); err != nil {
+		a.logger.Error("Failed to parse redeem data", "error", err.Error())
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		return
+	}
+
+	scraperCache.Save(investDataParsed, redeemDataParsed)
 
 	w.WriteHeader(http.StatusCreated)
 }
