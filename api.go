@@ -24,16 +24,14 @@ type Api interface {
 }
 
 type api struct {
-	logger  *slog.Logger
-	rwMutex *sync.RWMutex
-	wg      *sync.WaitGroup
+	logger *slog.Logger
+	wg     *sync.WaitGroup
 }
 
-func NewApi(logger *slog.Logger, rxMutex *sync.RWMutex, wg *sync.WaitGroup) Api {
+func NewApi(logger *slog.Logger, wg *sync.WaitGroup) Api {
 	return api{
-		logger:  logger,
-		rwMutex: rxMutex,
-		wg:      wg,
+		logger: logger,
+		wg:     wg,
 	}
 }
 
@@ -87,24 +85,35 @@ func (a api) health(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (a api) saveBonds(w http.ResponseWriter, r *http.Request) {
-	var tesouroResponse model.TesouroResponse
-	if err := json.NewDecoder(r.Body).Decode(&tesouroResponse); err != nil {
+	var body model.SaveBondsRequest
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		a.logger.Error("Failed to decode request body", "error", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	a.rwMutex.Lock()
-	defer a.rwMutex.Unlock()
+	var investDataParsed []model.Invest
+	if err := model.ParseCSV(body.InvestData, &investDataParsed); err != nil {
+		a.logger.Error("Failed to parse invest data", "error", err.Error())
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		return
+	}
 
-	scraperCache.Save(tesouroResponse.Data)
+	var redeemDataParsed []model.Redeem
+	if err := model.ParseCSV(body.RedeemData, &redeemDataParsed); err != nil {
+		a.logger.Error("Failed to parse redeem data", "error", err.Error())
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		return
+	}
+
+	scraperCache.Save(investDataParsed, redeemDataParsed)
 
 	w.WriteHeader(http.StatusCreated)
 }
 
 func (a api) listAllBonds(w http.ResponseWriter, _ *http.Request) {
-	a.rwMutex.RLock()
-	defer a.rwMutex.RUnlock()
+	scraperCache.RLock()
+	defer scraperCache.RUnlock()
 
 	var response model.ListAllBondsResponse
 	response.Bonds = scraperCache.BondsList
@@ -121,8 +130,8 @@ func (a api) listAllBonds(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (a api) getBondByName(w http.ResponseWriter, r *http.Request) {
-	a.rwMutex.RLock()
-	defer a.rwMutex.RUnlock()
+	scraperCache.RLock()
+	defer scraperCache.RUnlock()
 
 	bondName := chi.URLParam(r, "bondName")
 	bondName = strings.ReplaceAll(bondName, "-", " ")

@@ -24,14 +24,13 @@ func main() {
 
 	logger := bootstrapLogger()
 
-	rwMutex := &sync.RWMutex{}
 	wg := &sync.WaitGroup{}
 
 	ctx, cancelCtx := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancelCtx()
 
-	scraper := NewScraper(logger, rwMutex, wg)
-	api := NewApi(logger, rwMutex, wg)
+	scraper := NewScraper(logger, wg)
+	api := NewApi(logger, wg)
 
 	if viper.GetBool("SCRAPER_ENABLED") {
 		wg.Add(1)

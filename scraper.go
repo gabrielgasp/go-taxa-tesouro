@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"sync"
 	"time"
 
@@ -18,16 +19,14 @@ type Scraper interface {
 }
 
 type scraper struct {
-	logger  *slog.Logger
-	rwMutex *sync.RWMutex
-	wg      *sync.WaitGroup
+	logger *slog.Logger
+	wg     *sync.WaitGroup
 }
 
-func NewScraper(logger *slog.Logger, rxMutex *sync.RWMutex, wg *sync.WaitGroup) Scraper {
+func NewScraper(logger *slog.Logger, wg *sync.WaitGroup) Scraper {
 	return scraper{
-		logger:  logger,
-		rwMutex: rxMutex,
-		wg:      wg,
+		logger: logger,
+		wg:     wg,
 	}
 }
 
@@ -71,34 +70,48 @@ func (s scraper) shouldScrape(loc *time.Location) bool {
 }
 
 func (s scraper) scrape() {
-	s.rwMutex.Lock()
-	defer s.rwMutex.Unlock()
-
-	fakeChrome := req.ImpersonateChrome()
-	res := fakeChrome.Get(viper.GetString("URL_TESOURO")).Do()
-
-	if res.Response == nil {
-		s.logger.Error("Failed to fetch data", "error", res.Err)
+	investData, err := s.fetchData(viper.GetString("INVEST_CSV_URL"))
+	if err != nil {
+		s.logger.Error("Failed to fetch invest data", "error", err.Error())
 		return
 	}
 
-	if res.StatusCode != 200 {
-		s.logger.Error("Failed to fetch data", "status code", res.StatusCode)
+	var investDataParsed []model.Invest
+	if err := model.ParseCSV(investData, &investDataParsed); err != nil {
+		s.logger.Error("Failed to parse invest data", "error", err.Error())
 		return
 	}
 
+	redeemData, err := s.fetchData(viper.GetString("REDEEM_CSV_URL"))
+	if err != nil {
+		s.logger.Error("Failed to fetch redeem data", "error", err.Error())
+		return
+	}
+
+	var redeemDataParsed []model.Redeem
+	if err := model.ParseCSV(redeemData, &redeemDataParsed); err != nil {
+		s.logger.Error("Failed to parse redeem data", "error", err.Error())
+		return
+	}
+
+	scraperCache.Save(investDataParsed, redeemDataParsed)
+}
+
+func (s scraper) fetchData(url string) ([]byte, error) {
+	res, err := req.ImpersonateChrome().R().Get(url)
+	if err != nil || res.Response == nil {
+		return nil, fmt.Errorf("failed to fetch data: %w", err)
+	}
 	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status code %d", res.StatusCode)
+	}
+
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
-		s.logger.Error("Failed to read response body", "error", err.Error())
-		return
+		return nil, fmt.Errorf("failed to read data: %w", err)
 	}
 
-	var tesouroResponse model.TesouroResponse
-	if err := json.Unmarshal(data, &tesouroResponse); err != nil {
-		s.logger.Error("Failed to unmarshal response", "error", err.Error())
-		return
-	}
-
-	scraperCache.Save(tesouroResponse.Data)
+	return data, nil
 }
