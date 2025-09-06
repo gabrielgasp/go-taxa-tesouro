@@ -17,6 +17,7 @@ type ScraperBond struct {
 	MinimumInvestmentAmount float64 `json:"minimum_investment_amount"`
 	AnnualRedemptionRate    string  `json:"annual_redemption_rate"`
 	UnitaryRedemptionValue  float64 `json:"unitary_redemption_value"`
+	Maturity                string  `json:"maturity"`
 }
 
 type ScraperCache struct {
@@ -34,6 +35,7 @@ func (sc *ScraperCache) Save(investData []Invest, redeemData []Redeem) {
 			Name:                   red.Name,
 			AnnualRedemptionRate:   red.AnnualRedemptionRate,
 			UnitaryRedemptionValue: float64(red.UnitaryRedemptionValue),
+			Maturity:               red.Maturity,
 		}
 	}
 
@@ -46,6 +48,7 @@ func (sc *ScraperCache) Save(investData []Invest, redeemData []Redeem) {
 		bond.AnnualInvestmentRate = inv.AnnualInvestmentRate
 		bond.UnitaryInvestmentValue = float64(inv.UnitaryInvestmentValue)
 		bond.MinimumInvestmentAmount = float64(inv.MinimumInvestmentAmount)
+		bond.Maturity = inv.Maturity
 
 		bondsMap[key] = bond
 	}
