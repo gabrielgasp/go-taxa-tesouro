@@ -13,10 +13,10 @@ import (
 type BRL float64
 
 func (b *BRL) UnmarshalCSV(data string) error {
-	value := strings.TrimSpace(data)
-	value = strings.TrimPrefix(value, "R$ ")
+	value := strings.ReplaceAll(data, "R$", "")
 	value = strings.ReplaceAll(value, ".", "")
 	value = strings.ReplaceAll(value, ",", ".")
+	value = strings.TrimSpace(value)
 
 	f, err := strconv.ParseFloat(value, 64)
 	if err != nil {
