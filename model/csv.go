@@ -6,9 +6,28 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/gocarina/gocsv"
 )
+
+func init() {
+	gocsv.SetHeaderNormalizer(normalizeCSVHeader)
+}
+
+func normalizeCSVHeader(header string) string {
+	normalized := strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) {
+			return ' '
+		}
+		if r > unicode.MaxASCII {
+			return -1
+		}
+		return r
+	}, header)
+
+	return strings.ToLower(strings.TrimSpace(normalized))
+}
 
 type BRL float64
 
